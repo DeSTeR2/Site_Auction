@@ -4,5 +4,7 @@ namespace Auction.Api.Infrastructure;
 public static class AuctionClaimTypes
 {
     public const string EmailConfirmed = "email_confirmed";
+    public const string SessionId = "session_id";
+    public const string UserRole = "user";
     public const string AdminRole = "admin";
 }
