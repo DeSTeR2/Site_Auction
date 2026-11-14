@@ -57,3 +57,5 @@ TestResult.xml
 nunit-*.xml
 
 .context/
+# Development email drop folder
+mail-drop/
