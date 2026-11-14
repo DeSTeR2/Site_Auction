@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/mail-drop/
+**/TestResults/
+.git/
+.github/
+.context/
+.vs/
+.idea/
+.env
+tests/
+deploy/
+docker-compose*.yml
