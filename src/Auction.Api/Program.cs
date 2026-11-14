@@ -1,4 +1,5 @@
-// Application entry point: composes the four modules, infrastructure and the HTTP pipeline.
+// Application entry point: composes modules and the HTTP pipeline, or runs a deployment command (migrate, seed).
+using Auction.Api.Cli;
 using Auction.Api.Infrastructure;
 using Auction.Api.Infrastructure.Authentication;
 using Auction.Api.Infrastructure.Security;
@@ -28,6 +29,11 @@ builder.Services
 
 var app = builder.Build();
 
+if (args is [var command, ..] && CliCommands.IsKnown(command))
+{
+    return await CliCommands.RunAsync(app, command);
+}
+
 app.UseExceptionHandler();
 app.UseMiddleware<OriginCheckMiddleware>();
 app.UseRateLimiter();
@@ -43,6 +49,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 });
 app.MapFallback("/api/{**path}", context => context.WriteProblemAsync(AppErrors.NotFound));
 
-app.Run();
+await app.RunAsync();
+return 0;
 
 public partial class Program;
