@@ -67,7 +67,7 @@ services:
     command: ["redis-server", "--save", "", "--appendonly", "no"]
 
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
@@ -77,7 +77,7 @@ services:
       - miniodata:/data
 
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest-dev
     restart: "no"
     depends_on:
       - minio
