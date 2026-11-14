@@ -1,4 +1,4 @@
-// Registers persistence, domain event dispatch, file storage and email for the whole application.
+// Registers persistence with its readiness check, domain event dispatch, file storage and email.
 using Auction.Core.Common.Email;
 using Auction.Core.Common.Persistence;
 using Auction.Core.Common.Storage;
@@ -16,6 +16,8 @@ namespace Auction.Infrastructure;
 
 public static class InfrastructureModule
 {
+    public const string ReadinessTag = "ready";
+
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddSingleton(TimeProvider.System);
@@ -39,6 +41,8 @@ public static class InfrastructureModule
                 sp.GetRequiredService<DomainEventsInterceptor>(),
                 sp.GetRequiredService<AfterCommitInterceptor>()));
         services.AddScoped<IAuctionDbContext>(sp => sp.GetRequiredService<AuctionDbContext>());
+
+        services.AddHealthChecks().AddDbContextCheck<AuctionDbContext>("postgres", tags: [ReadinessTag]);
     }
 
     private static void AddStorage(IServiceCollection services)
