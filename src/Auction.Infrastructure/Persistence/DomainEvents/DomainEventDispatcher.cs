@@ -1,4 +1,5 @@
 // Resolves observers of a domain event from DI and invokes them in-transaction or after commit.
+using System.Reflection;
 using Auction.Core.Common.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,6 +40,6 @@ public sealed class DomainEventDispatcher(IServiceProvider services, ILogger<Dom
     private static Task InvokeAsync(Type handlerType, object handler, DomainEvent domainEvent, CancellationToken ct)
     {
         var method = handlerType.GetMethod(nameof(IInTransactionHandler<DomainEvent>.HandleAsync))!;
-        return (Task)method.Invoke(handler, [domainEvent, ct])!;
+        return (Task)method.Invoke(handler, BindingFlags.DoNotWrapExceptions, null, [domainEvent, ct], null)!;
     }
 }
