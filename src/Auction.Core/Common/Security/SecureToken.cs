@@ -12,7 +12,9 @@ public static class SecureToken
 
     public static byte[]? Hash(string? token)
     {
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrEmpty(token)
+            || !Base64Url.IsValid(token, out var decodedLength)
+            || decodedLength != SizeInBytes)
         {
             return null;
         }
