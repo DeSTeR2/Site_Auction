@@ -1,4 +1,4 @@
-// Registers persistence with its readiness check, domain event dispatch, file storage and email.
+// Registers persistence and file storage with their readiness checks, domain event dispatch and email.
 using Auction.Core.Common.Email;
 using Auction.Core.Common.Persistence;
 using Auction.Core.Common.Storage;
@@ -53,6 +53,9 @@ public static class InfrastructureModule
             .ValidateOnStart();
         services.AddSingleton<IFileStorage>(sp =>
             FileStorageFactory.Create(sp.GetRequiredService<IOptions<StorageOptions>>().Value));
+
+        services.AddSingleton<MinioHealthCheck>();
+        services.AddHealthChecks().AddCheck<MinioHealthCheck>("minio", tags: [ReadinessTag]);
     }
 
     private static void AddEmail(IServiceCollection services)
