@@ -14,8 +14,8 @@ docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES
   > "${BACKUP_DIR}/postgres/auction-${stamp}.dump"
 find "${BACKUP_DIR}/postgres" -name 'auction-*.dump' -mtime "+${RETENTION_DAYS}" -delete
 
-docker compose run --rm --no-deps -v "${BACKUP_DIR}/minio:/backup" --entrypoint sh minio-init -c \
-  'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null && mc mirror --overwrite --remove local/media /backup/media'
+docker compose run --rm --no-deps -v "${BACKUP_DIR}/minio:/backup" --entrypoint mc minio-init \
+  mirror --overwrite --remove local/media /backup/media
 
 if [ -n "${BACKUP_REMOTE:-}" ]; then
   rsync -a --delete "${BACKUP_DIR}/" "${BACKUP_REMOTE}"
