@@ -3,16 +3,18 @@
 set -euo pipefail
 
 : "${IMAGE_TAG:?IMAGE_TAG is required}"
+READY_ATTEMPTS="${READY_ATTEMPTS:-30}"
+READY_INTERVAL_SECONDS="${READY_INTERVAL_SECONDS:-2}"
 cd "$(dirname "$0")/.."
 
 wait_ready() {
   local service="$1"
-  for _ in $(seq 1 30); do
+  for _ in $(seq 1 "${READY_ATTEMPTS}"); do
     if docker compose exec -T caddy wget -qO- "http://${service}:8080/health/ready" >/dev/null 2>&1; then
       echo "${service} is ready"
       return 0
     fi
-    sleep 2
+    sleep "${READY_INTERVAL_SECONDS}"
   done
   echo "${service} did not become ready" >&2
   docker compose logs --tail 50 "${service}" >&2
