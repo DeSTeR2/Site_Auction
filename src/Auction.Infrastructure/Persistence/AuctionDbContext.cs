@@ -25,12 +25,12 @@ public sealed class AuctionDbContext(DbContextOptions<AuctionDbContext> options)
 
         var enumProperties = modelBuilder.Model.GetEntityTypes()
             .SelectMany(t => t.GetProperties())
-            .Where(p => p.ClrType.IsEnum)
+            .Where(p => (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).IsEnum)
             .ToList();
 
         foreach (var property in enumProperties)
         {
-            property.SetValueConverter(SnakeCaseEnumConverter.For(property.ClrType));
+            property.SetValueConverter(SnakeCaseEnumConverter.For(Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType));
         }
     }
 }
