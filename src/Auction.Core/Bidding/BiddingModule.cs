@@ -2,6 +2,7 @@
 using Auction.Core.Bidding.Application;
 using Auction.Core.Bidding.Application.Notifications;
 using Auction.Core.Bidding.Application.Rules;
+using Auction.Core.Bidding.Contracts;
 using Auction.Core.Common.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +24,8 @@ public static class BiddingModule
 
         services.AddImplementationsOf<INotificationTemplate>(assembly, ServiceLifetime.Singleton);
         services.AddSingleton<NotificationFactory>();
+
+        services.AddScoped<ISuspiciousActivityLog, SuspiciousActivityLog>();
         return services;
     }
 }
