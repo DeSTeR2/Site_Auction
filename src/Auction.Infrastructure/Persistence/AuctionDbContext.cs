@@ -1,4 +1,4 @@
-// EF Core context; entity configurations live per module under Persistence/<Module>/.
+// EF Core context; entity configurations live per module under Persistence/<Module>/, conventions follow design/03-data-model.md §1.
 using Auction.Core.Common.Events;
 using Auction.Core.Common.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +9,8 @@ public sealed class AuctionDbContext(DbContextOptions<AuctionDbContext> options)
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("citext");
+        modelBuilder.UseIdentityAlwaysColumns();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuctionDbContext).Assembly);
 
         var entitiesWithEvents = modelBuilder.Model.GetEntityTypes()
@@ -19,6 +21,16 @@ public sealed class AuctionDbContext(DbContextOptions<AuctionDbContext> options)
         foreach (var clrType in entitiesWithEvents)
         {
             modelBuilder.Entity(clrType).Ignore(nameof(IHasDomainEvents.DomainEvents));
+        }
+
+        var enumProperties = modelBuilder.Model.GetEntityTypes()
+            .SelectMany(t => t.GetProperties())
+            .Where(p => p.ClrType.IsEnum)
+            .ToList();
+
+        foreach (var property in enumProperties)
+        {
+            property.SetValueConverter(SnakeCaseEnumConverter.For(property.ClrType));
         }
     }
 }
