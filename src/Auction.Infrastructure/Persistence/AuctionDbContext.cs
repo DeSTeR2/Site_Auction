@@ -10,6 +10,7 @@ public sealed class AuctionDbContext(DbContextOptions<AuctionDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("citext");
+        modelBuilder.HasPostgresExtension("pg_trgm");
         modelBuilder.UseIdentityAlwaysColumns();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuctionDbContext).Assembly);
 

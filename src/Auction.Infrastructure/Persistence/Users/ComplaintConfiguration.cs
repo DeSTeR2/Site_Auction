@@ -1,4 +1,5 @@
 // Maps the complaints table: one new complaint per author and lot, comment required for reason "other".
+using Auction.Core.Lots.Domain;
 using Auction.Core.Users.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -24,6 +25,7 @@ public sealed class ComplaintConfiguration : IEntityTypeConfiguration<Complaint>
 
         builder.HasOne<User>().WithMany().HasForeignKey(complaint => complaint.AuthorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(complaint => complaint.ReviewedBy).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Lot>().WithMany().HasForeignKey(complaint => complaint.LotId).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(complaint => new { complaint.AuthorId, complaint.LotId })
             .IsUnique()
