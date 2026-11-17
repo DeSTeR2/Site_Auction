@@ -4,11 +4,25 @@ using Auction.Core.Common;
 
 namespace Auction.Core.Bidding.Application.Rules;
 
-public sealed class BidRuleChain(IEnumerable<IBidRule> rules)
+public sealed class BidRuleChain
 {
+    private readonly Dictionary<BidPhase, IBidRule[]> rulesByPhase;
+
+    public BidRuleChain(IEnumerable<IBidRule> rules)
+    {
+        rulesByPhase = rules
+            .GroupBy(r => r.Phase)
+            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.Order).ToArray());
+    }
+
     public BidRuleResult Run(BidPhase phase, BidContext context)
     {
-        foreach (var rule in rules.Where(r => r.Phase == phase).OrderBy(r => r.Order))
+        if (!rulesByPhase.TryGetValue(phase, out var phaseRules))
+        {
+            return BidRuleResult.Pass;
+        }
+
+        foreach (var rule in phaseRules)
         {
             var result = rule.Check(context);
             if (!result.IsPass)

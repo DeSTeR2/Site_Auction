@@ -42,6 +42,14 @@ public class BidRuleChainTests
     }
 
     [Fact]
+    public void Phase_without_rules_passes()
+    {
+        var chain = new BidRuleChain([new RecordingRule("rate", BidPhase.BeforeLock, 1, [], BidRejectionReason.RateLimited)]);
+
+        Assert.True(chain.Run(BidPhase.UnderLock, Context).IsPass);
+    }
+
+    [Fact]
     public void Check_maps_rejection_to_app_error()
     {
         var chain = new BidRuleChain([new RecordingRule("rate", BidPhase.BeforeLock, 1, [], BidRejectionReason.RateLimited)]);
