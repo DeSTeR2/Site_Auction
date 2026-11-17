@@ -18,38 +18,22 @@ public interface IEndsWithinFilter
     IQueryable<Lot> Apply(IQueryable<Lot> query, DateTimeOffset now);
 }
 
-public sealed class EndsWithinHourFilter : IEndsWithinFilter
+public abstract class EndsWithinPeriodFilter(EndsWithin key, TimeSpan period) : IEndsWithinFilter
 {
-    public EndsWithin Key => EndsWithin.Hour;
+    public EndsWithin Key => key;
 
     public IQueryable<Lot> Apply(IQueryable<Lot> query, DateTimeOffset now)
     {
-        var limit = now.AddHours(1);
+        var limit = now + period;
         return query.Where(l => l.EndsAt != null && l.EndsAt > now && l.EndsAt <= limit);
     }
 }
 
-public sealed class EndsWithinDayFilter : IEndsWithinFilter
-{
-    public EndsWithin Key => EndsWithin.Day;
+public sealed class EndsWithinHourFilter() : EndsWithinPeriodFilter(EndsWithin.Hour, TimeSpan.FromHours(1));
 
-    public IQueryable<Lot> Apply(IQueryable<Lot> query, DateTimeOffset now)
-    {
-        var limit = now.AddHours(24);
-        return query.Where(l => l.EndsAt != null && l.EndsAt > now && l.EndsAt <= limit);
-    }
-}
+public sealed class EndsWithinDayFilter() : EndsWithinPeriodFilter(EndsWithin.Day, TimeSpan.FromHours(24));
 
-public sealed class EndsWithinThreeDaysFilter : IEndsWithinFilter
-{
-    public EndsWithin Key => EndsWithin.ThreeDays;
-
-    public IQueryable<Lot> Apply(IQueryable<Lot> query, DateTimeOffset now)
-    {
-        var limit = now.AddDays(3);
-        return query.Where(l => l.EndsAt != null && l.EndsAt > now && l.EndsAt <= limit);
-    }
-}
+public sealed class EndsWithinThreeDaysFilter() : EndsWithinPeriodFilter(EndsWithin.ThreeDays, TimeSpan.FromDays(3));
 
 public sealed class EndsWithinAnyFilter : IEndsWithinFilter
 {

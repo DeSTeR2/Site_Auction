@@ -67,6 +67,21 @@ public class CatalogStrategyTests
         Assert.Equal([endingSoon], filtered);
     }
 
+    [Theory]
+    [InlineData(EndsWithin.Hour, 1)]
+    [InlineData(EndsWithin.Day, 24)]
+    [InlineData(EndsWithin.ThreeDays, 72)]
+    public void Period_filters_include_the_upper_bound_and_exclude_ended_lots(EndsWithin key, int hours)
+    {
+        var lot = TestLots.Active(startedAt: TestLots.Start);
+        var endsAt = lot.EndsAt!.Value;
+        var filter = Resolver.ResolveFilter(key);
+
+        Assert.Equal([lot], filter.Apply(new[] { lot }.AsQueryable(), endsAt.AddHours(-hours)).ToList());
+        Assert.Empty(filter.Apply(new[] { lot }.AsQueryable(), endsAt.AddHours(-hours).AddSeconds(-1)).ToList());
+        Assert.Empty(filter.Apply(new[] { lot }.AsQueryable(), endsAt).ToList());
+    }
+
     [Fact]
     public void Any_filter_keeps_everything()
     {
