@@ -54,6 +54,24 @@ public class SessionAuthenticationTests(AuctionApiFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task Failed_renewal_keeps_the_request_authenticated()
+    {
+        var token = factory.Sessions.Add(userId: 47, lastSeenAt: factory.Clock.GetUtcNow().AddMinutes(-10));
+        factory.Sessions.FailExtend = true;
+
+        try
+        {
+            var response = await factory.CreateClientWithSession(token).GetAsync("/api/test/authenticated");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+        finally
+        {
+            factory.Sessions.FailExtend = false;
+        }
+    }
+
+    [Fact]
     public async Task Long_user_agent_is_truncated_before_it_is_stored()
     {
         var client = factory.CreateClient();

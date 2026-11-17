@@ -26,33 +26,57 @@ public sealed class SessionAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
+        var session = await FindActiveSessionAsync(token);
+        if (session is null)
+        {
+            SessionCookie.Delete(Response, Options);
+            return AuthenticateResult.NoResult();
+        }
+
+        await RenewIfStaleAsync(session, token);
+        return AuthenticateResult.Success(CreateTicket(session));
+    }
+
+    private async Task<SessionRecord?> FindActiveSessionAsync(string token)
+    {
         var tokenHash = SecureToken.Hash(token);
         if (tokenHash is null)
         {
-            SessionCookie.Delete(Response, Options);
-            return AuthenticateResult.NoResult();
+            return null;
         }
 
         var session = await sessions.FindByTokenHashAsync(tokenHash, Context.RequestAborted);
+        var isUsable = session is not null
+            && session.ExpiresAt > clock.GetUtcNow()
+            && session.UserStatus == UserStatus.Active;
+        return isUsable ? session : null;
+    }
+
+    private async Task RenewIfStaleAsync(SessionRecord session, string token)
+    {
         var now = clock.GetUtcNow();
-        if (session is null || session.ExpiresAt <= now || session.UserStatus != UserStatus.Active)
+        if (now - session.LastSeenAt < Options.RenewAfter)
         {
-            SessionCookie.Delete(Response, Options);
-            return AuthenticateResult.NoResult();
+            return;
         }
 
-        if (now - session.LastSeenAt >= Options.RenewAfter)
+        try
         {
-            try
-            {
-                await sessions.ExtendAsync(session.SessionId, now, now + Options.Lifetime, Context.RequestAborted);
-                SessionCookie.Write(Response, Options, token);
-            }
-            catch (Exception)
-            {
-            }
+            await sessions.ExtendAsync(session.SessionId, now, now + Options.Lifetime, Context.RequestAborted);
+            SessionCookie.Write(Response, Options, token);
         }
+        catch (OperationCanceledException) when (Context.RequestAborted.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Failed to renew session {SessionId}; the request continues with the current expiry", session.SessionId);
+        }
+    }
 
+    private AuthenticationTicket CreateTicket(SessionRecord session)
+    {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, session.UserId.ToString(CultureInfo.InvariantCulture)),
@@ -61,6 +85,6 @@ public sealed class SessionAuthenticationHandler(
             new(AuctionClaimTypes.SessionId, session.SessionId.ToString(CultureInfo.InvariantCulture))
         };
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme.Name));
-        return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
+        return new AuthenticationTicket(principal, Scheme.Name);
     }
 }

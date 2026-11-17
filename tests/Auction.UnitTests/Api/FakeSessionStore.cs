@@ -17,6 +17,7 @@ public sealed class FakeSessionStore : ISessionStore
 
     public string? LastUserAgent { get; private set; }
 
+    public bool FailExtend { get; set; }
 
     public string Add(
         long userId,
@@ -52,6 +53,11 @@ public sealed class FakeSessionStore : ISessionStore
 
     public Task ExtendAsync(long sessionId, DateTimeOffset lastSeenAt, DateTimeOffset expiresAt, CancellationToken ct)
     {
+        if (FailExtend)
+        {
+            throw new InvalidOperationException("Session store is unavailable.");
+        }
+
         ExtendedSessionIds.Add(sessionId);
         return Task.CompletedTask;
     }
