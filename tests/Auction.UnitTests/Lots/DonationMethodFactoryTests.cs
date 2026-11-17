@@ -31,6 +31,17 @@ public class DonationMethodFactoryTests
     }
 
     [Fact]
+    public void Link_longer_than_limit_is_rejected()
+    {
+        var prefix = "https://example.com/";
+        var atLimit = prefix + new string('a', LinkDonationMethod.MaxLinkLength - prefix.Length);
+        var overLimit = atLimit + "a";
+
+        Assert.True(factory.Create(DonationMethodKind.Link, atLimit).IsSuccess);
+        Assert.Equal(AppErrors.Donation.LinkInvalid, factory.Create(DonationMethodKind.Link, overLimit).Error);
+    }
+
+    [Fact]
     public void Same_fund_with_different_tracking_normalizes_to_same_key()
     {
         var first = factory.Create(DonationMethodKind.Link, "https://send.monobank.ua/jar/abc?utm_campaign=x").Value;

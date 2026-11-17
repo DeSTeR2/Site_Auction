@@ -5,6 +5,8 @@ namespace Auction.Core.Lots.Domain.Donations;
 
 public sealed class LinkDonationMethod : IDonationMethod
 {
+    public const int MaxLinkLength = 500;
+
     private static readonly string[] TrackingParameters = ["fbclid", "gclid"];
 
     private LinkDonationMethod(string display, Uri donateUri, string normalizedKey)
@@ -26,7 +28,7 @@ public sealed class LinkDonationMethod : IDonationMethod
     {
         var trimmed = rawValue?.Trim();
         if (string.IsNullOrEmpty(trimmed)
-            || trimmed.Length > 500
+            || trimmed.Length > MaxLinkLength
             || !Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
             || uri.Scheme != Uri.UriSchemeHttps)
         {
