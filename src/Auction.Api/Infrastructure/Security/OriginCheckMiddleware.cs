@@ -13,8 +13,8 @@ public sealed class OriginCheckMiddleware(RequestDelegate next, IOptions<Securit
         if (HttpMethods.IsGet(request.Method)
             || HttpMethods.IsHead(request.Method)
             || HttpMethods.IsOptions(request.Method)
-            || !request.Headers.TryGetValue(HeaderNames.Origin, out var o)
-            || Same(o.ToString(), request.Host))
+            || !request.Headers.TryGetValue(HeaderNames.Origin, out var originHeader)
+            || IsTrustedOrigin(originHeader.ToString(), request.Host))
         {
             await next(context);
             return;
@@ -23,14 +23,14 @@ public sealed class OriginCheckMiddleware(RequestDelegate next, IOptions<Securit
         await context.WriteProblemAsync(AppErrors.Access.Forbidden);
     }
 
-    private bool Same(string o, HostString h)
+    private bool IsTrustedOrigin(string origin, HostString host)
     {
-        if (!Uri.TryCreate(o, UriKind.Absolute, out var u))
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var originUri))
         {
             return false;
         }
 
-        return string.Equals(u.Authority, h.Value, StringComparison.OrdinalIgnoreCase)
-            || options.Value.AllowedOrigins.Contains(o.TrimEnd('/'), StringComparer.OrdinalIgnoreCase);
+        return string.Equals(originUri.Authority, host.Value, StringComparison.OrdinalIgnoreCase)
+            || options.Value.AllowedOrigins.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase);
     }
 }
