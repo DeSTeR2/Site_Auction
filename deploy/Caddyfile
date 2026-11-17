@@ -1,0 +1,25 @@
+# Reverse proxy: TLS, security headers, /media from MinIO, round-robin over app instances checked by /health/ready.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	handle /media/* {
+		reverse_proxy minio:9000
+	}
+
+	handle {
+		reverse_proxy {$APP_UPSTREAMS} {
+			lb_policy round_robin
+			health_uri /health/ready
+			health_interval 10s
+			health_timeout 3s
+		}
+	}
+}

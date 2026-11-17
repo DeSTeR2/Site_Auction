@@ -1,0 +1,83 @@
+# Pull request checks (design/12-testing.md §5): backend build and tests, SPA checks once it exists, image build.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Auction.sln
+
+      - name: Build
+        run: dotnet build Auction.sln --no-restore -c Release -warnaserror
+
+      - name: Test
+        run: dotnet test Auction.sln --no-build -c Release --logger trx --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect SPA
+        id: spa
+        run: echo "present=$([ -f src/Auction.Web/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        if: steps.spa.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Auction.Web/package-lock.json
+
+      - name: Lint, type check, test and build
+        if: steps.spa.outputs.present == 'true'
+        working-directory: src/Auction.Web
+        run: |
+          npm ci
+          npm run lint
+          npx tsc --noEmit
+          npx vitest run
+          npm run build
+
+  docker:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --tag auction-app:ci .

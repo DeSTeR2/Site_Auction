@@ -16,7 +16,7 @@ public static class FileStorageFactory
         _ => throw new InvalidOperationException($"Unknown storage provider '{options.Provider}'.")
     };
 
-    private static IMinioClient BuildMinioClient(MinioStorageOptions minio) => new MinioClient()
+    internal static IMinioClient BuildMinioClient(MinioStorageOptions minio) => new MinioClient()
         .WithEndpoint(minio.Endpoint)
         .WithCredentials(minio.AccessKey, minio.SecretKey)
         .WithSSL(minio.UseSsl)
