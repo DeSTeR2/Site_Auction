@@ -15,6 +15,9 @@ public sealed class FakeSessionStore : ISessionStore
 
     public int Count => sessions.Count;
 
+    public string? LastUserAgent { get; private set; }
+
+
     public string Add(
         long userId,
         DateTimeOffset lastSeenAt,
@@ -41,6 +44,7 @@ public sealed class FakeSessionStore : ISessionStore
 
     public Task CreateAsync(long userId, byte[] tokenHash, DateTimeOffset now, DateTimeOffset expiresAt, string? userAgent, CancellationToken ct)
     {
+        LastUserAgent = userAgent;
         sessions[Key(tokenHash)] = new SessionRecord(
             Interlocked.Increment(ref nextId), userId, UserRole.User, UserStatus.Active, true, now, expiresAt);
         return Task.CompletedTask;

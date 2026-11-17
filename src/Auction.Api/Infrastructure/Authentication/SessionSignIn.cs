@@ -17,13 +17,15 @@ public sealed class SessionSignIn(
     TimeProvider clock,
     IOptionsMonitor<SessionAuthenticationOptions> optionsMonitor) : ISessionSignIn
 {
+    public const int MaxUserAgentLength = 512;
+
     private SessionAuthenticationOptions Options => optionsMonitor.Get(SessionAuthenticationHandler.SchemeName);
 
     public async Task SignInAsync(HttpContext httpContext, long userId, CancellationToken ct)
     {
         var token = SecureToken.Generate();
         var now = clock.GetUtcNow();
-        var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+        var userAgent = Truncate(httpContext.Request.Headers.UserAgent.ToString(), MaxUserAgentLength);
 
         await sessions.CreateAsync(userId, SecureToken.Hash(token)!, now, now + Options.Lifetime, userAgent, ct);
         SessionCookie.Write(httpContext.Response, Options, token);
@@ -39,4 +41,7 @@ public sealed class SessionSignIn(
 
         SessionCookie.Delete(httpContext.Response, Options);
     }
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length > maxLength ? value[..maxLength] : value;
 }

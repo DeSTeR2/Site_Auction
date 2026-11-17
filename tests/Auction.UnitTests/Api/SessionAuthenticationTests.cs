@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Auction.Api.Infrastructure.Authentication;
 using Auction.Core.Common.Enums;
 
 namespace Auction.UnitTests.Api;
@@ -50,6 +51,17 @@ public class SessionAuthenticationTests(AuctionApiFactory factory) : IClassFixtu
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(JsonValueKind.Null, body.GetProperty("userId").ValueKind);
+    }
+
+    [Fact]
+    public async Task Long_user_agent_is_truncated_before_it_is_stored()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", new string('x', 4000));
+
+        await client.PostAsync("/api/test/sign-in/48", null);
+
+        Assert.Equal(SessionSignIn.MaxUserAgentLength, factory.Sessions.LastUserAgent!.Length);
     }
 
     [Fact]
