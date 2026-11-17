@@ -34,6 +34,8 @@ dotnet test tests/Auction.IntegrationTests   # потрібен запущени
    ```
 
    `BACKUP_REMOTE` (наприклад, `user@backup-host:/backups/auction`) вмикає копію поза сервером через `rsync`.
+   Кожен дамп перевіряється через `pg_restore --list`; старі копії видаляються лише після успішної перевірки.
+   `BACKUP_ALERT_URL` (вебхук, що приймає POST з полем `text`) отримує повідомлення про збій.
 
 ## GitHub
 
