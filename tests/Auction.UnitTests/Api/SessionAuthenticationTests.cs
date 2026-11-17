@@ -53,6 +53,21 @@ public class SessionAuthenticationTests(AuctionApiFactory factory) : IClassFixtu
         Assert.Equal(JsonValueKind.Null, body.GetProperty("userId").ValueKind);
     }
 
+    [Theory]
+    [InlineData("not-a-token")]
+    [InlineData("%%%")]
+    [InlineData("AAAA")]
+    public async Task Malformed_cookie_is_removed_and_request_continues_as_guest(string cookieValue)
+    {
+        var response = await factory.CreateClientWithSession(cookieValue).GetAsync("/api/test/public");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("userId").ValueKind);
+        var cookie = Assert.Single(response.Headers.GetValues("Set-Cookie"), c => c.StartsWith(AuctionApiFactory.SessionCookie));
+        Assert.Contains("expires=Thu, 01 Jan 1970", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task Failed_renewal_keeps_the_request_authenticated()
     {
