@@ -31,6 +31,7 @@ public class AuctionApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("Security:AuthRequestsPerMinute", AuthRequestsPerMinute.ToString());
+        builder.UseSetting("Jobs:Storage", "InMemory");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<ISessionStore>(Sessions);

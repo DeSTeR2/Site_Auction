@@ -2,6 +2,8 @@
 using Auction.Api.Cli;
 using Auction.Api.Infrastructure;
 using Auction.Api.Infrastructure.Authentication;
+using Auction.Api.Infrastructure.Jobs;
+using Auction.Api.Infrastructure.Realtime;
 using Auction.Api.Infrastructure.Security;
 using Auction.Core.Bidding;
 using Auction.Core.Common;
@@ -19,6 +21,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddRequestSecurity();
 builder.Services.AddSessionAuthentication(builder.Configuration);
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+builder.Services.AddRealtime(builder.Configuration);
+builder.Services.AddBackgroundJobs(builder.Configuration);
 
 builder.Services
     .AddPlatform()
@@ -42,6 +46,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapRealtime();
+app.MapJobsDashboard();
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
