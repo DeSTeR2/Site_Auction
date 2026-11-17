@@ -24,6 +24,185 @@ namespace Auction.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityAlwaysColumns(modelBuilder);
 
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.Bid", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount");
+
+                    b.Property<long>("BidderId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("bidder_id");
+
+                    b.Property<long>("LotId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("lot_id");
+
+                    b.Property<DateTimeOffset>("PlacedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("placed_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bids");
+
+                    b.HasIndex("BidderId", "LotId")
+                        .HasDatabaseName("ix_bids_bidder_id_lot_id");
+
+                    b.HasIndex("LotId", "Amount")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bids_lot_id_amount");
+
+                    b.HasIndex("LotId", "PlacedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_bids_lot_id_placed_at");
+
+                    b.ToTable("bids", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_bids_amount", "amount BETWEEN 1 AND 100000000");
+                        });
+                });
+
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.Notification", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("EmailAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("email_attempts");
+
+                    b.Property<DateTimeOffset?>("EmailNextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("email_next_attempt_at");
+
+                    b.Property<DateTimeOffset?>("EmailSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("email_sent_at");
+
+                    b.Property<string>("EmailStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email_status");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("link");
+
+                    b.Property<long>("LotId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("lot_id");
+
+                    b.Property<long>("RecipientId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("recipient_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notifications");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_notifications_created_at");
+
+                    b.HasIndex("EmailNextAttemptAt")
+                        .HasDatabaseName("ix_notifications_email_next_attempt_at")
+                        .HasFilter("email_status = 'pending'");
+
+                    b.HasIndex("RecipientId", "IsRead", "CreatedAt")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_notifications_recipient_id_is_read_created_at");
+
+                    b.ToTable("notifications", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_notifications_email_attempts", "email_attempts BETWEEN 0 AND 3");
+
+                            t.HasCheckConstraint("ck_notifications_email_status", "email_status IN ('none', 'pending', 'sent', 'failed')");
+
+                            t.HasCheckConstraint("ck_notifications_type", "type IN ('outbid', 'you_won', 'you_lost', 'lot_sold', 'lot_unsold', 'new_bid_on_your_lot', 'favorite_ending', 'lot_hidden', 'lot_restored', 'complaint_reviewed', 'account_blocked', 'lot_approved', 'lot_rejected')");
+                        });
+                });
+
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.SuspiciousActivity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details");
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_reviewed");
+
+                    b.Property<long?>("LotId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("lot_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suspicious_activities");
+
+                    b.HasIndex("LotId")
+                        .HasDatabaseName("ix_suspicious_activities_lot_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_suspicious_activities_user_id");
+
+                    b.HasIndex("Type", "CreatedAt")
+                        .HasDatabaseName("ix_suspicious_activities_type_created_at");
+
+                    b.ToTable("suspicious_activities", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_suspicious_activities_type", "type IN ('own_lot_bid', 'rate_limit', 'new_account_bid', 'login_failures')");
+                        });
+                });
+
             modelBuilder.Entity("Auction.Core.Lots.Domain.Category", b =>
                 {
                     b.Property<short>("Id")
@@ -849,6 +1028,49 @@ namespace Auction.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_user_tokens_purpose", "purpose IN ('email_confirm', 'password_reset')");
                         });
+                });
+
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.Bid", b =>
+                {
+                    b.HasOne("Auction.Core.Users.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("BidderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_bids_user_bidder_id");
+
+                    b.HasOne("Auction.Core.Lots.Domain.Lot", null)
+                        .WithMany()
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_bids_lot_lot_id");
+                });
+
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.Notification", b =>
+                {
+                    b.HasOne("Auction.Core.Users.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_user_recipient_id");
+                });
+
+            modelBuilder.Entity("Auction.Core.Bidding.Domain.SuspiciousActivity", b =>
+                {
+                    b.HasOne("Auction.Core.Lots.Domain.Lot", null)
+                        .WithMany()
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_suspicious_activities_lot_lot_id");
+
+                    b.HasOne("Auction.Core.Users.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_suspicious_activities_user_user_id");
                 });
 
             modelBuilder.Entity("Auction.Core.Lots.Domain.DonationLink", b =>
