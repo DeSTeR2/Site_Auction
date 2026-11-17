@@ -37,6 +37,7 @@ public static class InfrastructureModule
 
         services.AddDbContext<AuctionDbContext>((sp, options) => options
             .UseNpgsql(configuration.GetConnectionString("Postgres"))
+            .UseSnakeCaseNamingConvention()
             .AddInterceptors(
                 sp.GetRequiredService<DomainEventsInterceptor>(),
                 sp.GetRequiredService<AfterCommitInterceptor>()));
