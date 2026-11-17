@@ -58,6 +58,8 @@ public static class InfrastructureModule
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddSingleton<IEmailSender>(sp =>
-            EmailSenderFactory.Create(sp.GetRequiredService<IOptions<EmailOptions>>().Value));
+            EmailSenderFactory.Create(
+                sp.GetRequiredService<IOptions<EmailOptions>>().Value,
+                sp.GetRequiredService<TimeProvider>()));
     }
 }

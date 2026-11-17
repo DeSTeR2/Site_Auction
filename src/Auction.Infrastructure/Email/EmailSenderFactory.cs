@@ -8,10 +8,10 @@ public static class EmailSenderFactory
     public const string Smtp = "Smtp";
     public const string File = "File";
 
-    public static IEmailSender Create(EmailOptions options) => options.Provider switch
+    public static IEmailSender Create(EmailOptions options, TimeProvider clock) => options.Provider switch
     {
         Smtp => new SmtpEmailSender(options),
-        File => new FileEmailSender(options),
+        File => new FileEmailSender(options, clock),
         _ => throw new InvalidOperationException($"Unknown email provider '{options.Provider}'.")
     };
 }
